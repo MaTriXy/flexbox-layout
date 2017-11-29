@@ -4,9 +4,11 @@
 /local.properties
 /.idea/workspace.xml
 /.idea/libraries
+!.idea/codeStyleSettings.xml
 .DS_Store
 /build
 /captures
+.vscode/
 
 # Taken from Android.gitignore https://github.com/github/gitignore/blob/master/Android.gitignore
 #

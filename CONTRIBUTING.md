@@ -33,3 +33,10 @@ accept your pull requests.
 1. Ensure that your code has an appropriate set of unit tests which all pass.
 1. Submit a pull request.
 
+## Code Style
+
+This repository follows the official Android code style.
+When you send a patch, please try to follow that.
+Here are the example steps to follow:
+
+1. Use the Project scheme in the Android Studio (It should be already saved as `.idea/codeStyleSettings.xml` and applied as the Project schema)

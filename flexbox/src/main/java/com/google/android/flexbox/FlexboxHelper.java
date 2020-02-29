@@ -18,12 +18,16 @@ package com.google.android.flexbox;
 
 import static com.google.android.flexbox.FlexContainer.NOT_SET;
 import static com.google.android.flexbox.FlexItem.FLEX_BASIS_PERCENT_DEFAULT;
+import static com.google.android.flexbox.FlexItem.FLEX_GROW_DEFAULT;
+import static com.google.android.flexbox.FlexItem.FLEX_SHRINK_NOT_SET;
 
 import static androidx.recyclerview.widget.RecyclerView.NO_POSITION;
 
+import android.graphics.drawable.Drawable;
 import android.util.SparseIntArray;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CompoundButton;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,6 +38,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.view.MarginLayoutParamsCompat;
+import androidx.core.widget.CompoundButtonCompat;
 
 /**
  * Offers various calculations for Flexbox to use the common logic between the classes such as
@@ -435,6 +440,8 @@ class FlexboxHelper {
                     addFlexLine(flexLines, flexLine, i, sumCrossSize);
                 }
                 continue;
+            } else if (child instanceof CompoundButton) {
+                evaluateMinimumSizeForCompoundButton((CompoundButton) child);
             }
 
             FlexItem flexItem = (FlexItem) child.getLayoutParams();
@@ -554,6 +561,9 @@ class FlexboxHelper {
                 flexLine.mItemCount++;
                 indexInFlexLine++;
             }
+            flexLine.mAnyItemsHaveFlexGrow |= flexItem.getFlexGrow() != FLEX_GROW_DEFAULT;
+            flexLine.mAnyItemsHaveFlexShrink |= flexItem.getFlexShrink() != FLEX_SHRINK_NOT_SET;
+
             if (mIndexToFlexLine != null) {
                 mIndexToFlexLine[i] = flexLines.size();
             }
@@ -620,6 +630,28 @@ class FlexboxHelper {
         }
 
         result.mChildState = childState;
+    }
+
+    /**
+     * Compound buttons (ex. {{@link android.widget.CheckBox}}, {@link android.widget.ToggleButton})
+     * have a button drawable with minimum height and width specified for them.
+     * To align the behavior with CSS Flexbox we want to respect these minimum measurement to avoid
+     * these drawables from being cut off during calculation. When the compound button has a minimum
+     * width or height already specified we will not make any change since we assume those were
+     * voluntarily set by the user.
+     *
+     * @param compoundButton the compound button that need to be evaluated
+     */
+    private void evaluateMinimumSizeForCompoundButton(CompoundButton compoundButton) {
+        FlexItem flexItem = (FlexItem) compoundButton.getLayoutParams();
+        int minWidth = flexItem.getMinWidth();
+        int minHeight = flexItem.getMinHeight();
+
+        Drawable drawable = CompoundButtonCompat.getButtonDrawable(compoundButton);
+        int drawableMinWidth = drawable == null ? 0 : drawable.getMinimumWidth();
+        int drawableMinHeight = drawable == null ? 0 : drawable.getMinimumHeight();
+        flexItem.setMinWidth(minWidth == NOT_SET ? drawableMinWidth : minWidth);
+        flexItem.setMinHeight(minHeight == NOT_SET ? drawableMinHeight : minHeight);
     }
 
     /**
@@ -940,10 +972,11 @@ class FlexboxHelper {
             case FlexDirection.ROW_REVERSE:
                 int widthMode = View.MeasureSpec.getMode(widthMeasureSpec);
                 int widthSize = View.MeasureSpec.getSize(widthMeasureSpec);
+                int largestMainSize = mFlexContainer.getLargestMainSize();
                 if (widthMode == View.MeasureSpec.EXACTLY) {
                     mainSize = widthSize;
                 } else {
-                    mainSize = mFlexContainer.getLargestMainSize();
+                    mainSize = largestMainSize > widthSize ? widthSize : largestMainSize;
                 }
                 paddingAlongMainAxis = mFlexContainer.getPaddingLeft()
                         + mFlexContainer.getPaddingRight();
@@ -971,10 +1004,10 @@ class FlexboxHelper {
         List<FlexLine> flexLines = mFlexContainer.getFlexLinesInternal();
         for (int i = flexLineIndex, size = flexLines.size(); i < size; i++) {
             FlexLine flexLine = flexLines.get(i);
-            if (flexLine.mMainSize < mainSize) {
+            if (flexLine.mMainSize < mainSize && flexLine.mAnyItemsHaveFlexGrow) {
                 expandFlexItems(widthMeasureSpec, heightMeasureSpec, flexLine,
                         mainSize, paddingAlongMainAxis, false);
-            } else {
+            } else if (flexLine.mMainSize > mainSize && flexLine.mAnyItemsHaveFlexShrink) {
                 shrinkFlexItems(widthMeasureSpec, heightMeasureSpec, flexLine,
                         mainSize, paddingAlongMainAxis, false);
             }
@@ -1571,7 +1604,7 @@ class FlexboxHelper {
 
     /**
      * Expand the view if the {@link FlexContainer#getAlignItems()} attribute is set to {@link
-     * AlignItems#STRETCH} or {@link FlexboxLayout.LayoutParams#mAlignSelf} is set as
+     * AlignItems#STRETCH} or {@link FlexItem#getAlignSelf()} is set as
      * {@link AlignItems#STRETCH}.
      *
      * @param fromIndex the index from which value, stretch is calculated
@@ -1579,7 +1612,7 @@ class FlexboxHelper {
      * @see FlexContainer#setFlexDirection(int)
      * @see FlexContainer#getAlignItems()
      * @see FlexContainer#setAlignItems(int)
-     * @see FlexboxLayout.LayoutParams#mAlignSelf
+     * @see FlexItem#getAlignSelf()
      */
     void stretchViews(int fromIndex) {
         if (fromIndex >= mFlexContainer.getFlexItemCount()) {
@@ -2008,6 +2041,7 @@ class FlexboxHelper {
             return index - another.index;
         }
 
+        @NonNull
         @Override
         public String toString() {
             return "Order{" +

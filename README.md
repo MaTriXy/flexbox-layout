@@ -1,6 +1,5 @@
 # FlexboxLayout
-[ ![Circle CI](https://circleci.com/gh/google/flexbox-layout.svg?style=shield&circle-token=2a42716dfffab73d73c5ce7ed7b3ee620cfa137b) ](https://circleci.com/gh/google/flexbox-layout/tree/master)
-[ ![Download](https://api.bintray.com/packages/google/flexbox-layout/flexbox/images/download.svg) ](https://bintray.com/google/flexbox-layout/flexbox/_latestVersion)
+[ ![Circle CI](https://circleci.com/gh/google/flexbox-layout.svg?style=shield&circle-token=2a42716dfffab73d73c5ce7ed7b3ee620cfa137b) ](https://circleci.com/gh/google/flexbox-layout/tree/main)
 
 FlexboxLayout is a library project which brings the similar capabilities of
 [CSS Flexible Box Layout Module](https://www.w3.org/TR/css-flexbox-1) to Android.
@@ -10,17 +9,20 @@ Add the following dependency to your `build.gradle` file:
 
 ```
 dependencies {
-    implementation 'com.google.android:flexbox:2.0.1'
+    implementation 'com.google.android.flexbox:flexbox:3.0.0'
 }
 ```
 
-**Note that the default values for `alignItems` and `alignContent` for `FlexboxLayout` have been changed from `stretch` to `flex_start` starting from 2.0.0, it may break the existing apps.
-Please make sure to set `stretch` explicitly if you want to apply the behavior of `stretch`.**
+**Starting from 3.0.0, the groupId is changed to `com.google.android.flexbox` in preparation to uploading the artifacts to google maven.
+You can still download the artifacts from jcenter for the past versions with the prior groupId (`com.google.android`), but migrating the library 3.0.0 is recommended.**
+
+Note that the default values for `alignItems` and `alignContent` for `FlexboxLayout` have been changed from `stretch` to `flex_start` starting from 2.0.0, it may break the existing apps.
+Please make sure to set `stretch` explicitly if you want to apply the behavior of `stretch`.
 
 
-**Note that starting from 1.1.0, the library is expected to use with AndroidX. Please migrate to [AndroidX](https://developer.android.com/jetpack/androidx/migrate) if you use 1.1.0 or above.**
+Note that starting from 1.1.0, the library is expeced to use with AndroidX. Please migrate to [AndroidX](https://developer.android.com/jetpack/androidx/migrate) if you use 1.1.0 or above.
 
-**Please use 1.0.0 if you haven't migrated to AndroidX.**
+Please use 1.0.0 if you haven't migrated to AndroidX.
 
 
 # Usage
@@ -69,8 +71,8 @@ flexboxLayout.setFlexDirection(FlexDirection.ROW);
 
 View view = flexboxLayout.getChildAt(0);
 FlexboxLayout.LayoutParams lp = (FlexboxLayout.LayoutParams) view.getLayoutParams();
-lp.order = -1;
-lp.flexGrow = 2;
+lp.setOrder(-1);
+lp.setFlexGrow(2);
 view.setLayoutParams(lp);
 ```
 
@@ -148,9 +150,9 @@ Here is a quick overview of the attributes/features comparison between the two i
 * __flexWrap__
   * This attribute controls whether the flex container is single-line or multi-line, and the
   direction of the cross axis. Possible values are:
-    * nowrap (default)
-    * wrap
-    * wrap_reverse
+    * nowrap (default for FlexboxLayout)
+    * wrap (default for FlexboxLayoutManager)
+    * wrap_reverse (not supported by FlexboxLayoutManager)
 
     ![Flex Wrap explanation](/assets/flex-wrap.gif)
 
@@ -161,16 +163,17 @@ Here is a quick overview of the attributes/features comparison between the two i
     * center
     * space_between
     * space_around
+    * space_evenly
 
     ![Justify Content explanation](/assets/justify-content.gif)
 
 * __alignItems__
   * This attribute controls the alignment along the cross axis. Possible values are:
-    * flex_start (default)
+    * flex_start (default for FlexboxLayout)
     * flex_end
     * center
     * baseline
-    * stretch
+    * stretch (default for FlexboxLayoutManager)
 
     ![Align Items explanation](/assets/align-items.gif)
 
